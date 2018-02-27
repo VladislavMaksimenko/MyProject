@@ -1,0 +1,146 @@
+<html>
+<head>
+    <title>Agents</title>
+    <style>
+        div {
+            text-align: center;
+        }
+        body{
+            background: url(res/back.jpg);
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            align-items: center;
+        }
+        #map{
+            display: block;
+            margin-right: auto;
+            margin-left: auto;
+            margin-top: 40px;
+            border: 2px solid #000000;
+            background: #ffffff;
+        }
+        .but{
+            margin-top: 20px;
+        }
+        a.button1 {
+            font-weight: 500;
+            color: white;
+            text-decoration: none;
+            padding: 13px;
+            border-radius: 5px;
+            background: #238D0E;
+            transition: 0.15s;
+            margin-right: 150px;
+        }
+        a.button1:active {
+            background: #21935A;
+        }
+        a.button2 {
+            font-weight: 500;
+            color: white;
+            text-decoration: none;
+            padding: 13px;
+            border-radius: 5px;
+            background: #8D1206;
+            transition: 0.15s;
+        }
+        a.button2:active {
+            background: #A3281C;
+        }
+    </style>
+</head>
+<body>
+<canvas id="map"></canvas>
+<div class="but">
+    <a id="start" class="button1" onclick="start()" href="#">Start</a>
+    <a id="stop" class="button2" onclick="stop()" href="#">Stop</a>
+</div>
+<script>
+
+    var wsUrl = "ws://" + document.location.host + document.location.pathname + "control";
+    console.log(wsUrl);
+    var ws = new WebSocket(wsUrl);
+
+    function start() {
+        ws.send("Start");
+        console.log("Send: Start");
+    }
+
+    function stop() {
+        ws.send("Stop");
+        console.log("Send: Stop");
+    }
+
+    ws.onopen = function(evt) { console.log("connect onOpen") };
+    ws.onclose = function(evt) { console.log("connect onClose") };
+
+    ws.onmessage = function (evt) {
+        agents = [];
+        foods = [];
+        var m = JSON.parse(evt.data, function(k, v) {
+            if (k === "agents") {
+                agents = v;
+            } else if (k === "foods") {
+                foods = v;
+            } else if (k === "isGame") {
+                isGame = v
+            }
+            return v;
+        });
+        if (isGame){
+            setTimeout(drawAgents, 15);
+        }
+    };
+
+    var isGame = false;
+    var mapSize = 500;
+
+    var img1 = new Image;
+    img1.src = "res/barash.png";
+    var img2 = new Image;
+    img2.src = "res/copatich.png";
+
+    var background = new Image;
+    var feed = new Image;
+    background.src = "res/backgr.jpg";
+    feed.src = "res/snowflake.png";
+
+    var canv = document.getElementById("map");
+    var mainContext = canv.getContext('2d');
+
+    window.onload = function (){
+        canv.width = mapSize;
+        canv.height = mapSize;
+        mainContext.drawImage(background, 0, 0, mapSize, mapSize);
+    };
+
+    var agents = [];
+    var foods = [];
+
+    function drawAgents() {
+        mainContext.drawImage(background, 0, 0, mapSize, mapSize);
+        var size;
+        var img = new Image;
+        for (var i = 0; i < agents.length; i++) {
+            var group = agents[i]["group"];
+            size = agents[i]["size"];
+            if(group === 0)
+                img = img1;
+            else if(group === 1)
+                img = img2;
+
+            mainContext.drawImage(img, agents[i]["x"] - size/2, agents[i]["y"] - size/2, size, size);
+            mainContext.fillText(parseInt(agents[i]["energy"]), agents[i]["x"] - size/2, agents[i]["y"] - size/2);
+
+        }
+        for (var i = 0; i < foods.length; i++) {
+            size = foods[i]["size"];
+            mainContext.drawImage(feed, foods[i]["x"] - size/2, foods[i]["y"] - size/2, foods[i]["size"], foods[i]["size"]);
+        }
+    }
+
+</script>
+</body>
+</html>
